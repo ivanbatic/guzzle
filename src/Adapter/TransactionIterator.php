@@ -76,7 +76,7 @@ class TransactionIterator implements \Iterator
 
     private function configureEvents(array $options)
     {
-        static $namedEvents = ['before', 'complete', 'error'];
+        $namedEvents = $this->client->getNamedEvents();
 
         foreach ($namedEvents as $event) {
             if (isset($options[$event])) {
