@@ -176,4 +176,34 @@ interface ClientInterface extends HasEmitterInterface
      * @return string Returns the base URL if present
      */
     public function getBaseUrl();
+
+    /**
+     * Registers a named event that client should propagate
+     * @param string|array $eventName
+     *
+     * @return mixed
+     * @author Ivan Batić <ivan.batic@live.com>
+     */
+    public function registerNamedEvents($eventName);
+
+    /**
+     * Unregisters a named event
+     * @param string|array $eventName
+     *
+     * @return mixed
+     * @author Ivan Batić <ivan.batic@live.com>
+     */
+    public function unregisterNamedEvents($eventName);
+
+    /**
+     * Returns an array of currently registered named events
+     * @return array
+     * @author Ivan Batić <ivan.batic@live.com>
+     */
+    public function getNamedEvents();
+
+    /**
+     * Resets named events
+     */
+    public function resetNamedEvents();
 }

@@ -3,6 +3,7 @@
 namespace GuzzleHttp;
 
 use GuzzleHttp\Adapter\Curl\MultiAdapter;
+use GuzzleHttp\Event\EmitterInterface;
 use GuzzleHttp\Event\HasEmitterTrait;
 use GuzzleHttp\Adapter\FakeParallelAdapter;
 use GuzzleHttp\Adapter\ParallelAdapterInterface;
@@ -25,6 +26,12 @@ class Client implements ClientInterface
     use HasEmitterTrait;
 
     const DEFAULT_CONCURRENCY = 25;
+
+    /** @var array Default named events to respond to*/
+    protected static $defaultNamedEvents = ['before', 'complete', 'error'];
+
+    /** @var array Named events that this client will respond to */
+    protected $namedEvents = [];
 
     /** @var MessageFactoryInterface Request factory used by the client */
     private $messageFactory;
@@ -75,6 +82,8 @@ class Client implements ClientInterface
         $this->configureBaseUrl($config);
         $this->configureDefaults($config);
         $this->configureAdapter($config);
+
+        $this->namedEvents = self::$defaultNamedEvents;
     }
 
     /**
@@ -356,5 +365,69 @@ class Client implements ClientInterface
         } elseif (!$this->parallelAdapter) {
             $this->parallelAdapter = $this->getDefaultParallelAdapter();
         }
+    }
+
+
+    /**
+     * @inheritdoc
+     * @author Ivan Batić <ivan.batic@live.com>
+     */
+    public function registerNamedEvents($eventName)
+    {
+        $events = [];
+        foreach (func_get_args() as $arg) {
+            $argArray = is_array($arg) ? $arg : [$arg];
+            array_walk_recursive($argArray, function ($value, $key) use (&$events) {
+                    if(is_string($value)){
+                        $events[] = $value;
+                    }
+                }
+            );
+        }
+        $this->namedEvents = array_unique(array_merge($this->namedEvents, $events));
+    }
+
+    /**
+     * @inheritdoc
+     * @author Ivan Batić <ivan.batic@live.com>
+     */
+    public function unregisterNamedEvents($eventName)
+    {
+        $events = [];
+        foreach (func_get_args() as $arg) {
+            $argArray = is_array($arg) ? $arg : [$arg];
+            array_walk_recursive($argArray, function ($value, $key) use (&$events) {
+                    if(is_string($value)){
+                        $events[] = $value;
+                    }
+                }
+            );
+        }
+        $this->namedEvents = array_diff($this->namedEvents, $events);
+    }
+
+    /**
+     * @inheritdoc
+     * @author Ivan Batić <ivan.batic@live.com>
+     */
+    public function getNamedEvents(){
+        return $this->namedEvents;
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function resetNamedEvents(){
+        $this->namedEvents = self::$defaultNamedEvents;
+    }
+
+    /**
+     * Get the event emitter of the object
+     *
+     * @return EmitterInterface
+     */
+    public function getEmitter()
+    {
+        // TODO: Implement getEmitter() method.
     }
 }
