@@ -4,6 +4,7 @@ namespace GuzzleHttp;
 
 use GuzzleHttp\Adapter\Curl\MultiAdapter;
 use GuzzleHttp\Event\EmitterInterface;
+use GuzzleHttp\Event\EventTriggerInterface;
 use GuzzleHttp\Event\HasEmitterTrait;
 use GuzzleHttp\Adapter\FakeParallelAdapter;
 use GuzzleHttp\Adapter\ParallelAdapterInterface;
@@ -438,5 +439,18 @@ class Client implements ClientInterface
      */
     public function resetNamedEvents(){
         $this->namedEvents = self::$defaultNamedEvents;
+    }
+
+    /**
+     * Scans all listeners and registers custom named event listeners attached to them
+     */
+    public function autoloadCustomEvents()
+    {
+        array_walk_recursive($this->getEmitter()->listeners(), function ($value) {
+                if ($value instanceof EventTriggerInterface) {
+                    $this->registerNamedEvents($value->getTriggeredEvents());
+                }
+            }
+        );
     }
 }
