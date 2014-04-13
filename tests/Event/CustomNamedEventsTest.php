@@ -86,7 +86,7 @@ class CustomNamedEventsTest extends \PHPUnit_Framework_TestCase
                         $event->getRequest()->getEmitter()->emit('forbidden', $event);
                         $event->intercept(new Response(200));
                     },
-                'allowed'    => function (EventInterface $event) use (&$customEventTriggered) {
+                'allowed'   => function (EventInterface $event) use (&$customEventTriggered) {
                         $customEventTriggered = true;
                     },
                 'forbidden' => function (EventInterface $event) use (&$forbiddenEventTriggered) {
