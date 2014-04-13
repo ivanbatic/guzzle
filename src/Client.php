@@ -13,10 +13,12 @@ use GuzzleHttp\Adapter\StreamingProxyAdapter;
 use GuzzleHttp\Adapter\Curl\CurlAdapter;
 use GuzzleHttp\Adapter\Transaction;
 use GuzzleHttp\Adapter\TransactionIterator;
+use GuzzleHttp\Exception\ClientException;
 use GuzzleHttp\Exception\RequestException;
 use GuzzleHttp\Message\MessageFactory;
 use GuzzleHttp\Message\MessageFactoryInterface;
 use GuzzleHttp\Message\RequestInterface;
+use GuzzleHttp\Adapter\AppendableAdapterInterface;
 
 /**
  * HTTP client
@@ -212,6 +214,23 @@ class Client implements ClientInterface
                 ? $options['parallel']
                 : self::DEFAULT_CONCURRENCY
         );
+    }
+
+    /**
+     * Tries to insert requests into an already running batch
+     * @param       $requests
+     * @param array $options
+     */
+    public function appendRequests($requests, array $options = []){
+        if (!($requests instanceof TransactionIterator)) {
+            $requests = new TransactionIterator($requests, $this, $options);
+        }
+
+        if($this->parallelAdapter instanceof AppendableAdapterInterface){
+            $this->parallelAdapter->appendRequests($requests);
+        } else {
+            throw new ClientException(sprintf('Could not append %s to %s.', get_class($requests), get_class($this->parallelAdapter)));
+        }
     }
 
     /**

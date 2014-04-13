@@ -3,7 +3,9 @@
 namespace GuzzleHttp\Adapter\Curl;
 
 use GuzzleHttp\Adapter\AdapterInterface;
+use GuzzleHttp\Adapter\AppendableAdapterInterface;
 use GuzzleHttp\Adapter\ParallelAdapterInterface;
+use GuzzleHttp\Adapter\Transaction;
 use GuzzleHttp\Adapter\TransactionInterface;
 use GuzzleHttp\Event\RequestEvents;
 use GuzzleHttp\Exception\AdapterException;
@@ -21,7 +23,7 @@ use GuzzleHttp\Message\MessageFactoryInterface;
  * request config, you can also specify the select_timeout variable using the
  * `GUZZLE_CURL_SELECT_TIMEOUT` environment variable.
  */
-class MultiAdapter implements AdapterInterface, ParallelAdapterInterface
+class MultiAdapter implements AdapterInterface, ParallelAdapterInterface, AppendableAdapterInterface
 {
     const ERROR_STR = 'See http://curl.haxx.se/libcurl/c/libcurl-errors.html for an explanation of cURL errors';
     const ENV_SELECT_TIMEOUT = 'GUZZLE_CURL_SELECT_TIMEOUT';
@@ -40,6 +42,9 @@ class MultiAdapter implements AdapterInterface, ParallelAdapterInterface
 
     /** @var double */
     private $selectTimeout;
+
+    /** @var  BatchContext */
+    private $runningContext;
 
     /**
      * Accepts an associative array of options:
@@ -108,17 +113,43 @@ class MultiAdapter implements AdapterInterface, ParallelAdapterInterface
 
     public function sendAll(\Iterator $transactions, $parallel)
     {
-        $context = new BatchContext(
+        // We need to save the context in order to insert additional handles
+        $this->runningContext = new BatchContext(
             $this->checkoutMultiHandle(),
             false,
             $transactions
         );
 
         foreach (new \LimitIterator($transactions, 0, $parallel) as $trans) {
-            $this->addHandle($trans, $context);
+            $this->addHandle($trans, $this->runningContext);
         }
 
-        $this->perform($context);
+        $this->perform($this->runningContext);
+
+        // Unset running context after performing
+        $this->runningContext = null;
+    }
+
+    /**
+     * @inheritdoc
+     * @param \Iterator $transactions
+     *
+     * @throws \GuzzleHttp\Exception\AdapterException
+     */
+    public function appendRequests(\Iterator $transactions){
+        if(!($this->runningContext instanceof BatchContext)){
+            throw new AdapterException('Trying to insert a request into non existing context.');
+        }
+
+        if(empty($this->multiHandles)){
+            throw new AdapterException('Trying to insert a request, but no handles exist');
+        }
+
+        /** @var $transactions Transaction[] */
+
+        foreach($transactions as $transaction){
+            $this->runningContext->appendRequest($transaction->getRequest());
+        }
     }
 
     private function perform(BatchContext $context)
@@ -127,22 +158,28 @@ class MultiAdapter implements AdapterInterface, ParallelAdapterInterface
         // usually required for fast transfers.
         $active = false;
         $multi = $context->getMultiHandle();
-
         do {
-            while (($mrc = curl_multi_exec($multi, $active)) == CURLM_CALL_MULTI_PERFORM);
-            if ($mrc != CURLM_OK && $mrc != CURLM_CALL_MULTI_PERFORM) {
-                self::throwMultiError($mrc);
-            }
-            // Need to check if there are pending transactions before processing
-            // them so that we don't bail from the loop too early.
-            $pending = $context->hasPending();
-            $this->processMessages($context);
-            if ($active && curl_multi_select($multi, $this->selectTimeout) === -1) {
-                // Perform a usleep if a select returns -1.
-                // See: https://bugs.php.net/bug.php?id=61141
-                usleep(250);
-            }
-        } while ($active || $pending);
+            do {
+                while (($mrc = curl_multi_exec($multi, $active)) == CURLM_CALL_MULTI_PERFORM);
+                if ($mrc != CURLM_OK && $mrc != CURLM_CALL_MULTI_PERFORM) {
+                    self::throwMultiError($mrc);
+                }
+                // Need to check if there are pending transactions before processing
+                // them so that we don't bail from the loop too early.
+                $pending = $context->hasPending();
+                $this->processMessages($context);
+                if ($active && curl_multi_select($multi, $this->selectTimeout) === -1) {
+                    // Perform a usleep if a select returns -1.
+                    // See: https://bugs.php.net/bug.php?id=61141
+                    usleep(250);
+                }
+            } while ($active || $pending);
+            /**
+             * Added one more loop level so curl picks up handles that were added after the last one finished
+             * @author Ivan Batić <ivan.batic@live.com>
+             */
+            curl_multi_exec($multi, $active);
+        } while ($active);
 
         $this->releaseMultiHandle($multi);
     }

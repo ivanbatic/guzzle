@@ -3,7 +3,9 @@
 namespace GuzzleHttp\Adapter\Curl;
 
 use GuzzleHttp\Adapter\TransactionInterface;
+use GuzzleHttp\Adapter\TransactionIterator;
 use GuzzleHttp\Exception\AdapterException;
+use GuzzleHttp\Message\RequestInterface;
 
 /**
  * Provides context for a Curl transaction, including active handles,
@@ -18,7 +20,7 @@ class BatchContext
     /** @var \SplObjectStorage Map of transactions to curl resources */
     private $handles;
 
-    /** @var \Iterator Yields pending transactions */
+    /** @var TransactionIterator Yields pending transactions */
     private $pending;
 
     /** @var bool Whether or not to throw transactions */
@@ -154,5 +156,9 @@ class BatchContext
         unset($this->handles[$transaction]);
 
         return $info;
+    }
+
+    public function appendRequest(RequestInterface $request){
+        $this->pending->append($request);
     }
 }

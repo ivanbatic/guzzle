@@ -35,6 +35,10 @@ class TransactionIterator implements \Iterator
         }
     }
 
+    public function append(RequestInterface $request){
+        $this->source->append($request);
+    }
+
     public function current()
     {
         $request = $this->source->current();
