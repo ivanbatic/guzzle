@@ -446,7 +446,8 @@ class Client implements ClientInterface
      */
     public function autoloadCustomEvents()
     {
-        array_walk_recursive($this->getEmitter()->listeners(), function ($value) {
+        $listeners = $this->getEmitter()->listeners();
+        array_walk_recursive($listeners, function ($value, $index) {
                 if ($value instanceof EventTriggerInterface) {
                     $this->registerNamedEvents($value->getTriggeredEvents());
                 }
