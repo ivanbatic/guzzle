@@ -420,14 +420,4 @@ class Client implements ClientInterface
     public function resetNamedEvents(){
         $this->namedEvents = self::$defaultNamedEvents;
     }
-
-    /**
-     * Get the event emitter of the object
-     *
-     * @return EmitterInterface
-     */
-    public function getEmitter()
-    {
-        // TODO: Implement getEmitter() method.
-    }
 }
