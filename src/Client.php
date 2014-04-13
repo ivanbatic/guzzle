@@ -444,7 +444,7 @@ class Client implements ClientInterface
     /**
      * Scans all listeners and registers custom named event listeners attached to them
      */
-    public function autoloadCustomEvents()
+    public function loadCustomEvents()
     {
         $listeners = $this->getEmitter()->listeners();
         array_walk_recursive($listeners, function ($value, $index) {
