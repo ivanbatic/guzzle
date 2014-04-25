@@ -56,6 +56,11 @@ defaults
     default headers (e.g., User-Agent), default query string parameters, SSL
     configurations, and any other supported request options.
 
+emitter
+    Specifies an event emitter (``GuzzleHttp\Event\EmitterInterface``) instance
+    to be used by the client to emit request events. This option is useful if
+    you need to inject an emitter with listeners/subscribers already attached.
+
 Here's an example of creating a client with various options, including using
 a mock adapter that just returns the result of a callable function and a
 base URL that is a URI template with parameters.
@@ -437,7 +442,7 @@ query
 .. code-block:: php
 
     // Send a GET request to /get?foo=bar
-    $client->get('/get', ['query' => ['foo' => 'bar']);
+    $client->get('/get', ['query' => ['foo' => 'bar']]);
 
 Query strings specified in the ``query`` option are combined with any query
 string values that are parsed from the URL.
@@ -445,7 +450,7 @@ string values that are parsed from the URL.
 .. code-block:: php
 
     // Send a GET request to /get?abc=123&foo=bar
-    $client->get('/get?abc=123', ['query' => ['foo' => 'bar']);
+    $client->get('/get?abc=123', ['query' => ['foo' => 'bar']]);
 
 auth
 ----
