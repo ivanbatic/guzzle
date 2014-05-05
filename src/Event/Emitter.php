@@ -25,8 +25,20 @@ class Emitter implements EmitterInterface
     /** @var array */
     private $sorted = [];
 
+    /** @var array  */
+    private $boundEvents = [];
+
     public function on($eventName, callable $listener, $priority = 0)
     {
+
+        // Prevent rebinding existing events
+        $this->boundEvents += [$eventName => []];
+        $this->boundEvents[$eventName] += [$priority => []];
+        if(in_array($listener, $this->boundEvents[$eventName][$priority], true)){
+            return false;
+        }
+        $this->boundEvents[$eventName][$priority][] = $listener;
+
         if ($priority === 'first') {
             $priority = isset($this->listeners[$eventName])
                 ? max(array_keys($this->listeners[$eventName])) + 1
@@ -63,8 +75,8 @@ class Emitter implements EmitterInterface
         foreach ($this->listeners[$eventName] as $priority => $listeners) {
             if (false !== ($key = array_search($listener, $listeners, true))) {
                 unset(
-                    $this->listeners[$eventName][$priority][$key],
-                    $this->sorted[$eventName]
+                $this->listeners[$eventName][$priority][$key],
+                $this->sorted[$eventName]
                 );
             }
         }
@@ -79,6 +91,7 @@ class Emitter implements EmitterInterface
                     $this->listeners($eventName);
                 }
             }
+
             return $this->sorted;
         }
 
@@ -143,5 +156,32 @@ class Emitter implements EmitterInterface
                 'dispatch'         => 'emit'
             ]
         );
+    }
+
+    /**
+     * @param array $listeners
+     */
+    public function setListeners(array $listeners)
+    {
+        $this->listeners = $listeners;
+        $this->sorted = [];
+
+        foreach($this->listeners as $eventName => $priorities){
+            krsort($this->listeners[$eventName]);
+            $this->sorted[$eventName] = call_user_func_array(
+                'array_merge',
+                $this->listeners[$eventName]
+            );
+        }
+
+        return $this;
+    }
+
+    /**
+     * @return array
+     */
+    public function getListeners()
+    {
+        return $this->listeners;
     }
 }

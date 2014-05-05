@@ -119,8 +119,8 @@ class MultiAdapter implements AdapterInterface, ParallelAdapterInterface, Append
             $transactions
         );
 
-        foreach (new \LimitIterator($transactions, 0, $parallel) as $trans) {
-            $this->addHandle($trans, $this->runningContext);
+        foreach (new \LimitIterator($transactions, 0, $parallel) as $transaction) {
+            $this->addHandle($transaction, $this->runningContext);
         }
 
         $this->perform($this->runningContext);

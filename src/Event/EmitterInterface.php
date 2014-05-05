@@ -85,4 +85,8 @@ interface EmitterInterface
      * @param SubscriberInterface $subscriber Subscriber to detach.
      */
     public function detach(SubscriberInterface $subscriber);
+
+    public function getListeners();
+
+    public function setListeners(array $listeners);
 }
