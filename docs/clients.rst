@@ -5,7 +5,7 @@ Clients
 Clients are used to create requests, create transactions, send requests
 through an HTTP adapter, and return a response. You can add default request
 options to a client that are applied to every request (e.g., default headers,
-default query string parameters, etc), and you can add event listeners and
+default query string parameters, etc.), and you can add event listeners and
 subscribers to every request created by a client.
 
 Creating a client
@@ -250,7 +250,7 @@ request using event callbacks.
             // Do something with the completion of the request...
         },
         'error' => function (ErrorEvent $event) {
-            echo 'Request failed: ' . $event->getRequest()->getUrl() . "\n"
+            echo 'Request failed: ' . $event->getRequest()->getUrl() . "\n";
             echo $event->getException();
             // Do something to handle the error...
         }
@@ -302,7 +302,7 @@ immeditaley and prevent subsequent requests from being sent.
         }
     ]);
 
-.. _request-options:
+.. _batch-requests:
 
 Batching Requests
 -----------------
@@ -342,6 +342,8 @@ third argument that allows you to specify the 'before', 'complete' and 'error'
 events as well as specify the maximum number of request to send in parallel
 using the 'parallel' option key. This options array is the exact same format as
 the options array exposed in ``GuzzleHttp\ClientInterface::sendAll()``.
+
+.. _request-options:
 
 Request Options
 ===============
@@ -544,7 +546,7 @@ Adapter Specific Authentication Schemes
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 If you need to use authentication methods provided by cURL (e.g., NTLM, GSS,
-etc...), then you need to specify a curl adapter option in the ``options``
+etc.), then you need to specify a curl adapter option in the ``options``
 request option array. See :ref:`config-option` for more information.
 
 .. _cookies-option:
